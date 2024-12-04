@@ -6,55 +6,43 @@
 /*   By: thodavid <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/02 09:44:32 by thodavid          #+#    #+#             */
-/*   Updated: 2024/12/02 17:45:00 by thodavid         ###   ########.fr       */
+/*   Updated: 2024/12/04 16:51:03 by thodavid         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-#include <unistd.h>
 #include "get_next_line.h"
-#ifndef BUFFER_SIZE
-#   define BUFFER_SIZE 24
-#endif
 
-
-/*
- * 	si BUFFER not define au moment de la compilation avec (cc -Wall -Wextra -Werror -D BUFFER_SIZE=42 <files>.c)
- * 		define BUFFER_SIZE = 24
- *	var line 	:  la ligne a retourner et donc lue par read 
- *	var copy_tmp	:  copie en cours
- *
- *
- *
- *	 RETURN 
- *	 	Le contenu de la ligne lue : comportement correct
- *	 	NULL : rien d’autre à lire ou une erreur s’est produite
- */
 char	*get_next_line(int fd)
 {
+	/*	variables	*/
+	static t_list	*stash;
 	char		*line;
-	static char	*copy_tmp;
-	char		*buffer;
-	size_t		read_rslt;
+	int		readed;
 
-	if (fd < 0)
+	/*	gestions des arguments	*/
+	if (fd < 0 || BUFFER_SIZE <= 0) //si le fichier on na pas le droit de le lire 
 		return (NULL);
 
-	buffer = malloc(sizeof(char) * BUFFER_SIZE +1);
-	if (!buffer)
+	readed = 1;
+	line = NULL;
+
+
+
+	/*	steps	*/
+
+	// 1. read from fd and add to stash
+	read_and_stash(fd, &stash, &readed);
+	if(stash == NULL)
 		return (NULL);
-	
-	read_rslt = read(fd, buffer, BUFFER_SIZE);
-	if(read_rslt <= 0)
+	// 2. extract from stash to line
+	extract_line(stash, &line);
+	// 3. clean stash
+	clean_stash(&stash);
+	if (line[0] == '\0')
 	{
-		free(buffer);
+		free_stash(stash);
+		stash = NULL; 
+		free(line);
 		return (NULL);
 	}
-	else if(read_rslt == BUFFER_SIZE)
-	{
-		//function qui permet de savoir si on et en fin de ligne 
-	}
-
-	//RETURN
-		//Le contenu de la ligne lue : comportement correct
-		//NULL : rien d’autre à lire ou une erreur s’est produite
-	
+	return (line);
 }
